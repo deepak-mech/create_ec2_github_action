@@ -27,7 +27,7 @@ jobs:
       - name: Create EC2 instance
         id: create_ec2
         run: |
-          instance_id=$(aws ec2 run-instances --image-id ami-0f5ee92e2d63afc18 --instance-type t2.micro  --key-name github_action_ec2  --security-group-ids sg-052f1583c995d1901  --subnet-id subnet-05e92436b2c054eee   --query 'Instances[0].InstanceId'  --output text)
+          instance_id=$(aws ec2 run-instances --image-id ami-0f5ee92e2d63afc18 --instance-type t2.micro  --key-name github_action_ec2  --security-group-ids sg-052f1583c995d1901  --subnet-id subnet-0803f42df7b4a2f32   --query 'Instances[0].InstanceId'  --output text)
           echo "INSTANCE_ID=$instance_id" >> $GITHUB_ENV
 
       - name: Wait for EC2 instance to start
