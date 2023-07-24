@@ -47,7 +47,7 @@ jobs:
           instance_ip=$INSTANCE_IP
           ssh_ready="false"
           while [ $ssh_ready != "true" ]; do
-            ssh -o StrictHostKeyChecking=no -q ec2-user@$instance_ip exit
+            ssh -o StrictHostKeyChecking=no -q ubuntu@$instance_ip exit
             if [ $? -eq 0 ]; then
               ssh_ready="true"
             else
@@ -58,4 +58,4 @@ jobs:
       - name: Install Git on EC2 instance
         run: |
           instance_ip=$INSTANCE_IP
-          ssh -o StrictHostKeyChecking=no ec2-user@$instance_ip 'sudo yum install -y git'
+          ssh -o StrictHostKeyChecking=no ubuntu@$instance_ip 'sudo yum install -y git'
