@@ -42,20 +42,18 @@ jobs:
           public_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
           echo "INSTANCE_IP=$public_ip" >> $GITHUB_ENV
 
-      - name: Wait for SSH to be available
+      - name: Install Git in EC2
+        env:
+            PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
         run: |
           instance_ip=$INSTANCE_IP
-          ssh_ready="false"
-          while [ $ssh_ready != "true" ]; do
-            ssh -o StrictHostKeyChecking=no -q ubuntu@$instance_ip exit
-            if [ $? -eq 0 ]; then
-              ssh_ready="true"
-            else
-              sleep 10
-            fi
-          done
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ubuntu@$instance_ip  '
+          
+              #Now we have got the access of EC2 and we will start the deploy .
 
-      - name: Install Git on EC2 instance
-        run: |
-          instance_ip=$INSTANCE_IP
-          ssh -o StrictHostKeyChecking=no ubuntu@$instance_ip 'sudo yum install -y git'
+              cd /home/ubuntu/ &&
+              sudo apt install git
+          '
+
+
