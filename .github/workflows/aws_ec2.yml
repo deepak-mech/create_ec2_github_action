@@ -1,0 +1,68 @@
+name: Create EC2 instance and install Git
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create-and-install:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+
+      - name: Configure AWS credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region ${{ secrets.AWS_REGION }}
+
+      - name: Create EC2 instance
+        id: create_ec2
+        run: |
+          instance_id=$(aws ec2 run-instances \
+            --image-id ami-0f5ee92e2d63afc18 \             # Replace with your desired AMI ID
+            --instance-type t2.micro \                     # Replace with your desired instance type
+            --key-name github_action_ec2 \                 # Replace with your EC2 key pair name
+            --security-group-ids sg-0e29522b3d954b6f3 \    # Replace with your security group ID
+            --subnet-id subnet-05e92436b2c054eee \         # Replace with your subnet ID
+            --query 'Instances[0].InstanceId' \
+            --output text)
+          echo "INSTANCE_ID=$instance_id" >> $GITHUB_ENV
+
+      - name: Wait for EC2 instance to start
+        run: |
+          instance_id=$INSTANCE_ID
+          aws ec2 wait instance-running --instance-ids $instance_id
+
+      - name: Get instance public IP
+        id: get_instance_ip
+        run: |
+          instance_id=$INSTANCE_ID
+          public_ip=$(aws ec2 describe-instances --instance-ids $instance_id --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+          echo "INSTANCE_IP=$public_ip" >> $GITHUB_ENV
+
+      - name: Wait for SSH to be available
+        run: |
+          instance_ip=$INSTANCE_IP
+          ssh_ready="false"
+          while [ $ssh_ready != "true" ]; do
+            ssh -o StrictHostKeyChecking=no -q ec2-user@$instance_ip exit
+            if [ $? -eq 0 ]; then
+              ssh_ready="true"
+            else
+              sleep 10
+            fi
+          done
+
+      - name: Install Git on EC2 instance
+        run: |
+          instance_ip=$INSTANCE_IP
+          ssh -o StrictHostKeyChecking=no ec2-user@$instance_ip 'sudo yum install -y git'
