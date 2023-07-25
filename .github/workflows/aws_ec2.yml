@@ -53,8 +53,8 @@ jobs:
               #Now we have got the access of EC2 and we will start the deploy .
 
               cd /home/ubuntu/ &&
-              sudo apt install httpd -y &&
-              sudo systemctl start httpd
+              sudo apt-get install apache2 -y &&
+              sudo systemctl start apache2
           '
 
 
